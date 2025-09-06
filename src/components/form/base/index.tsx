@@ -184,22 +184,20 @@ export default function BaseForm<T extends ZodSchema>({
     <FormProvider {...methods} key={key}>
       <Box className='flex flex-col gap-5' id='form-container'>
         {renderChildren({ onSubmit: submit, onReset: resetForm, methods, isLoading })}
-        {!hideButtonCancel && (
-          <ButtonRenderForm
-            params={{
-              onSubmit: submit,
-              onReset: resetForm,
-              methods,
-              isLoading
-            }}
-            formType={formType}
-            customButtons={customButtons}
-            buttonSubmit={buttonSubmit}
-            hideButtonCancel={hideButtonCancel}
-            isLoading={isLoading}
-            onClickButtonCancel={() => alert('kembali')}
-          />
-        )}
+        <ButtonRenderForm
+          params={{
+            onSubmit: submit,
+            onReset: resetForm,
+            methods,
+            isLoading
+          }}
+          formType={formType}
+          customButtons={customButtons}
+          buttonSubmit={buttonSubmit}
+          hideButtonCancel={hideButtonCancel}
+          isLoading={isLoading}
+          onClickButtonCancel={() => alert('kembali')}
+        />
       </Box>
     </FormProvider>
   )

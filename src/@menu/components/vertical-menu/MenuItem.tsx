@@ -114,17 +114,14 @@ const MenuItem: ForwardRefRenderFunction<HTMLLIElement, MenuItemProps> = (props,
 
   // Change active state when the url changes
   useEffect(() => {
-    const itemHref: string | undefined = href || (component && typeof component !== 'string' && component.props.href)
-    const itemPath = itemHref?.split('?')[0]
-
     if (activeMenuKey && activeMenuKey !== '') {
       setActive(rest.menukey === activeMenuKey)
       return
+    } else {
+      setActive(false)
+      return
     }
 
-    if (itemPath) {
-      setActive(pathname.startsWith(itemPath))
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, dataLength, activeMenuKey, href, component])
 

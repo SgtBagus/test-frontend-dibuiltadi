@@ -12,6 +12,6 @@ export const routes = {
     index: '/transaction'
   },
   user: {
-    index: `/users`
+    index: `/profile`
   }
 }

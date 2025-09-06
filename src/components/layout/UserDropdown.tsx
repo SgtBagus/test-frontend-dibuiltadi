@@ -25,6 +25,7 @@ import usePRouter from '@/hooks/usePRouter'
 import ThemeSettings from './ThemeSettings'
 
 import { useAuth } from '@/context/authContext'
+import { getInitials } from '@/helper/getInitials'
 
 const UserDropdown = () => {
   // States
@@ -47,20 +48,6 @@ const UserDropdown = () => {
     }
 
     setPopperOpen(false)
-  }
-
-  const getInitials = (name: string) => {
-    if (!name) return ''
-
-    // split nama berdasarkan spasi, ambil huruf pertama tiap kata
-    const initials = name
-      .split(' ')
-      .filter(word => word.length > 0) // buang spasi kosong
-      .map(word => word[0].toUpperCase())
-      .join('')
-
-    // limit inisial max 3 huruf
-    return initials.slice(0, 3)
   }
 
   return (

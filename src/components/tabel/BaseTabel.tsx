@@ -1,13 +1,13 @@
 'use client'
 
-import { ChangeEvent, CSSProperties, ReactNode, useState, useCallback, useMemo } from 'react'
+import { CSSProperties, ReactNode, useMemo } from 'react'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import { TablePagination, useMediaQuery, useTheme } from '@mui/material'
+import { Skeleton, TablePagination, TableSortLabel, useMediaQuery, useTheme } from '@mui/material'
 
 interface ColumnConfig<T, K extends keyof T = keyof T> {
   header: string
@@ -19,49 +19,74 @@ interface ColumnConfig<T, K extends keyof T = keyof T> {
   tooltip?: (value: T[K], row: T) => string
   className?: string
   style?: CSSProperties
-  cell?: (value: T[K], row: T) => ReactNode
+  cell?: (value?: T[K], row?: T) => ReactNode
+  sortable?: boolean
 }
 
 type BaseTableProps<T> = {
   data: T[]
   columns: ColumnConfig<T>[]
+  count: number // total data dari server
+  page: number
+  rowsPerPage: number
+  orderBy?: keyof T | null
+  order?: 'asc' | 'desc'
+  onPageChange: (page: number) => void
+  onRowsPerPageChange: (rowsPerPage: number) => void
+  onSortChange?: (orderBy: keyof T, order: 'asc' | 'desc') => void
   rowsPerPageOptions?: number[]
-  defaultRowsPerPage?: number
+  isLoading?: boolean
 }
 
 export default function BaseTable<T>({
   data,
   columns,
-  defaultRowsPerPage = 10,
-  rowsPerPageOptions = [5, 10, 50, 100]
+  count,
+  page,
+  rowsPerPage,
+  orderBy,
+  order = 'asc',
+  onPageChange,
+  onRowsPerPageChange,
+  onSortChange,
+  rowsPerPageOptions = [5, 10, 50, 100],
+  isLoading
 }: BaseTableProps<T>) {
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage)
-
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  // ✅ useCallback biar gak ganti referensi tiap render
-  const handleChangePage = useCallback((_event: unknown, newPage: number) => {
-    setPage(newPage)
-  }, [])
+  const handleSort = (property: keyof T) => {
+    if (!onSortChange) return
+    const isAsc = orderBy === property && order === 'asc'
+    onSortChange(property, isAsc ? 'desc' : 'asc')
+  }
 
-  const handleChangeRowsPerPage = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0) // reset ke halaman pertama
-  }, [])
+  const sortedData = useMemo(() => {
+    if (!orderBy) return data // kalau belum pilih kolom, pakai data asli
 
-  // ✅ useMemo untuk slicing data
-  const paginatedData = useMemo(
-    () => data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [data, page, rowsPerPage]
-  )
+    return [...data].sort((a, b) => {
+      const aValue = a[orderBy as keyof T]
+      const bValue = b[orderBy as keyof T]
+
+      if (aValue == null) return -1
+      if (bValue == null) return 1
+
+      // simple string/number compare
+      if (aValue < bValue) return order === 'asc' ? -1 : 1
+      if (aValue > bValue) return order === 'asc' ? 1 : -1
+      return 0
+    })
+  }, [data, orderBy, order])
+
+  const paginatedData = useMemo(() => {
+    const start = page * rowsPerPage
+    return sortedData.slice(start, start + rowsPerPage)
+  }, [sortedData, page, rowsPerPage])
 
   return (
     <TableContainer className='rounded border'>
       <div style={{ overflowX: 'auto' }}>
         <Table>
-          {/* Header */}
           <TableHead>
             <TableRow>
               {columns.map((col, idx) => (
@@ -80,13 +105,23 @@ export default function BaseTable<T>({
                   }}
                   className={col.className}
                 >
-                  {col.header}
+                  {col.sortable ? (
+                    <TableSortLabel
+                      active={orderBy === col.accessor}
+                      direction={orderBy === col.accessor ? order : 'asc'}
+                      onClick={() => handleSort(col.accessor)}
+                      disabled={isLoading}
+                    >
+                      {col.header}
+                    </TableSortLabel>
+                  ) : (
+                    col.header
+                  )}
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
 
-          {/* Body */}
           <TableBody>
             {paginatedData.map((row, rowIndex) => (
               <TableRow key={rowIndex}>
@@ -110,7 +145,7 @@ export default function BaseTable<T>({
                         className={col.className}
                         title={col.tooltip ? col.tooltip(value, row) : undefined}
                       >
-                        {col.cell ? col.cell(value, row) : (value as ReactNode)}
+                        {isLoading ? <Skeleton /> : col.cell ? col.cell(value, row) : (value as ReactNode)}
                       </TableCell>
                     )
                   })}
@@ -120,15 +155,15 @@ export default function BaseTable<T>({
         </Table>
       </div>
 
-      {/* Pagination */}
       <TablePagination
         rowsPerPageOptions={rowsPerPageOptions}
         component='div'
-        count={data.length}
+        count={count}
         rowsPerPage={rowsPerPage}
+        disabled={isLoading}
         page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
+        onPageChange={(_, newPage) => onPageChange(newPage)}
+        onRowsPerPageChange={e => onRowsPerPageChange(parseInt(e.target.value, 10))}
         labelRowsPerPage={isMobile ? 'Baris' : 'Baris per halaman:'}
         labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
       />

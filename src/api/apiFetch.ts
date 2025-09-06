@@ -5,6 +5,12 @@ export type FetchOptions = {
   headers?: Record<string, string>
 }
 
+export function buildUrlWithParams(baseUrl: string, endpoint: string, params?: Record<string, any>) {
+  if (!params) return `${baseUrl}${endpoint}`
+  const searchParams = new URLSearchParams(params).toString()
+  return `${baseUrl}${endpoint}?${searchParams}`
+}
+
 export function getTokenFromCookie(): string | null {
   if (typeof document === 'undefined') return null // server-side safety
   const match = document.cookie.match(new RegExp('(^| )' + 'token' + '=([^;]+)'))
@@ -25,10 +31,12 @@ export async function apiFetch<T = any>(
     finalHeaders['Authorization'] = `Bearer ${getTokenFromCookie()}`
   }
 
-  const res = await fetch(`${process.env.BASE_URL_API}${endpoint}`, {
+  const url = buildUrlWithParams(process.env.BASE_URL_API!, endpoint, method === 'GET' ? body : undefined)
+
+  const res = await fetch(url, {
     method,
     headers: finalHeaders,
-    body: body ? JSON.stringify(body) : undefined
+    body: method !== 'GET' ? JSON.stringify(body) : undefined
   })
 
   if (!res.ok) {

@@ -297,7 +297,8 @@ export default function ModalForm<T extends ZodSchema>({
               {renderChildren({
                 onSubmit: submit,
                 onReset: resetForm,
-                methods
+                methods,
+                isLoading
               })}
             </Stack>
           </DialogContent>
@@ -306,7 +307,8 @@ export default function ModalForm<T extends ZodSchema>({
               params={{
                 onSubmit: submit,
                 onReset: resetForm,
-                methods
+                methods,
+                isLoading
               }}
               formType={formType}
               customButtons={customButtons}
