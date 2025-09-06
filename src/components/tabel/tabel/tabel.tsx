@@ -1,15 +1,21 @@
 'use client'
 
-import { CSSProperties, ReactNode, useMemo } from 'react'
+import { CSSProperties, ReactNode, useEffect, useMemo, useState } from 'react'
+
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import { Skeleton, TablePagination, TableSortLabel, useMediaQuery, useTheme } from '@mui/material'
 
-interface ColumnConfig<T, K extends keyof T = keyof T> {
+import { Skeleton, TablePagination, TableSortLabel, useMediaQuery, useTheme } from '@mui/material'
+import { useTabelContext } from '../context/tabelContext'
+import { toast } from 'react-toastify'
+import { getErrorMessage } from '@/utils/getErrorMessage'
+import { apiFetch } from '@/api/apiFetch'
+
+export interface ColumnConfig<T, K extends keyof T = keyof T> {
   header: string
   accessor: K
   size?: number | 'auto'
@@ -23,65 +29,98 @@ interface ColumnConfig<T, K extends keyof T = keyof T> {
   sortable?: boolean
 }
 
-type BaseTableProps<T> = {
-  data: T[]
-  columns: ColumnConfig<T>[]
-  count: number // total data dari server
-  page: number
-  rowsPerPage: number
-  orderBy?: keyof T | null
-  order?: 'asc' | 'desc'
-  onPageChange: (page: number) => void
-  onRowsPerPageChange: (rowsPerPage: number) => void
-  onSortChange?: (orderBy: keyof T, order: 'asc' | 'desc') => void
-  rowsPerPageOptions?: number[]
-  isLoading?: boolean
+export type DataTabelType = {
+  endpoint: string
+  params?: Record<string, any>
 }
 
-export default function BaseTable<T>({
-  data,
+type BaseTableProps<T> = {
+  data: DataTabelType
+  columns: ColumnConfig<T>[]
+  rowsPerPageOptions?: number[]
+}
+
+export default function Tabel<T>({
+  data: { endpoint, params },
   columns,
-  count,
-  page,
-  rowsPerPage,
-  orderBy,
-  order = 'asc',
-  onPageChange,
-  onRowsPerPageChange,
-  onSortChange,
-  rowsPerPageOptions = [5, 10, 50, 100],
-  isLoading
+  rowsPerPageOptions = [5, 10, 50, 100]
 }: BaseTableProps<T>) {
+  const [isLoading, setIsLoading] = useState(false)
+  const {
+    count,
+    tabelFilter: {
+      filter,
+      metaFilter: { page, perPage, sortBy, sortDirection }
+    },
+    setCount,
+    setMetaFilter
+  } = useTabelContext()
+
+  const [data, setData] = useState<T[]>([])
+
+  const getData = async () => {
+    try {
+      setIsLoading(true)
+      const res = await apiFetch(endpoint, {
+        body: {
+          page: page + 1, // server biasanya 1-based
+          perPage,
+          ...(sortBy && {
+            sortBy
+          }),
+          ...(sortBy !== null && {
+            sortDirection
+          }),
+          ...filter,
+          ...params
+        }
+      })
+      setData(res.items)
+      setCount((res.items as []).length) // pastikan API balikin total rows
+    } catch (error) {
+      toast.error(getErrorMessage(error))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    getData()
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage, sortBy, sortDirection, filter])
+
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  const handleSort = (property: keyof T) => {
-    if (!onSortChange) return
-    const isAsc = orderBy === property && order === 'asc'
-    onSortChange(property, isAsc ? 'desc' : 'asc')
+  const handleSort = (property: string) => {
+    const isAsc = sortBy === property && sortDirection === 'asc'
+    setMetaFilter(prev => ({
+      ...prev,
+      sortBy: property,
+      sortDirection: isAsc ? 'desc' : 'asc'
+    }))
   }
 
   const sortedData = useMemo(() => {
-    if (!orderBy) return data // kalau belum pilih kolom, pakai data asli
-
     return [...data].sort((a, b) => {
-      const aValue = a[orderBy as keyof T]
-      const bValue = b[orderBy as keyof T]
+      const aValue = a[sortBy as keyof T]
+      const bValue = b[sortBy as keyof T]
 
       if (aValue == null) return -1
       if (bValue == null) return 1
 
       // simple string/number compare
-      if (aValue < bValue) return order === 'asc' ? -1 : 1
-      if (aValue > bValue) return order === 'asc' ? 1 : -1
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
       return 0
     })
-  }, [data, orderBy, order])
+  }, [data, sortBy, sortDirection])
 
   const paginatedData = useMemo(() => {
-    const start = page * rowsPerPage
-    return sortedData.slice(start, start + rowsPerPage)
-  }, [sortedData, page, rowsPerPage])
+    const start = page * perPage
+    return sortedData.slice(start, start + perPage)
+  }, [page, perPage, sortedData])
 
   return (
     <TableContainer className='rounded border'>
@@ -107,9 +146,9 @@ export default function BaseTable<T>({
                 >
                   {col.sortable ? (
                     <TableSortLabel
-                      active={orderBy === col.accessor}
-                      direction={orderBy === col.accessor ? order : 'asc'}
-                      onClick={() => handleSort(col.accessor)}
+                      active={sortBy === col.accessor}
+                      direction={sortBy === col.accessor ? sortDirection : 'asc'}
+                      onClick={() => handleSort(col.accessor as string)}
                       disabled={isLoading}
                     >
                       {col.header}
@@ -159,11 +198,21 @@ export default function BaseTable<T>({
         rowsPerPageOptions={rowsPerPageOptions}
         component='div'
         count={count}
-        rowsPerPage={rowsPerPage}
+        rowsPerPage={perPage}
         disabled={isLoading}
         page={page}
-        onPageChange={(_, newPage) => onPageChange(newPage)}
-        onRowsPerPageChange={e => onRowsPerPageChange(parseInt(e.target.value, 10))}
+        onPageChange={(_, newPage) =>
+          setMetaFilter(prev => ({
+            ...prev,
+            page: newPage
+          }))
+        }
+        onRowsPerPageChange={e =>
+          setMetaFilter(prev => ({
+            ...prev,
+            perPage: parseInt(e.target.value, 10)
+          }))
+        }
         labelRowsPerPage={isMobile ? 'Baris' : 'Baris per halaman:'}
         labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count !== -1 ? count : `lebih dari ${to}`}`}
       />

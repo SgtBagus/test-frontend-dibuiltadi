@@ -1,4 +1,4 @@
-import { TableColumns } from '@/components/tabel/BaseTabel'
+import { TableColumns } from '@/components/tabel'
 import { CustomerType } from '@/types/customerType'
 import { Chip } from '@mui/material'
 
