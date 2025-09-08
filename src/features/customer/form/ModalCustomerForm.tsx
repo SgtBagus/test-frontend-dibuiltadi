@@ -89,6 +89,7 @@ export default function ModalCustomerForm() {
       formSchema={customerFormSchema}
       onSubmit={onSubmit}
       title='Data Pelanggan'
+      hideButtonModal
     >
       {isLoading ? (
         <div className='flex items-center justify-center'>
