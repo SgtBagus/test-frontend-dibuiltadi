@@ -11,6 +11,7 @@ import ThemeProvider from '@components/theme'
 import { ThemeSettingProvider } from '@/hooks/useThemeSettings'
 import { NavMenuProvider } from '@/context/navMenuContext'
 import { MenuProvider } from '@/context/menuContext'
+import { ModalProvider } from '@/context/toggleModalContext'
 
 type Props = ChildrenType & {
   direction: Direction
@@ -24,9 +25,11 @@ const Providers = (props: Props) => {
     <VerticalNavProvider>
       <ThemeSettingProvider>
         <ThemeProvider direction={direction}>
-          <NavMenuProvider>
-            <MenuProvider>{children}</MenuProvider>
-          </NavMenuProvider>
+          <ModalProvider>
+            <NavMenuProvider>
+              <MenuProvider>{children}</MenuProvider>
+            </NavMenuProvider>
+          </ModalProvider>
         </ThemeProvider>
       </ThemeSettingProvider>
     </VerticalNavProvider>

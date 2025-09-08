@@ -14,6 +14,8 @@ import { ButtonCustomType, CustomButtonSubmitParamTypes, FormTypeScript, MainFor
 import toast from '@/helper/toast'
 import { getErrorMessage } from '@/utils/getErrorMessage'
 import { flattenObject } from '@/utils/flattenObject'
+import usePRouter from '@/hooks/usePRouter'
+import { usePathname } from 'next/navigation'
 
 /**
  * BaseFormV2 - A flexible form component integrated with React Hook Form and Zod validation.
@@ -86,6 +88,8 @@ export default function BaseForm<T extends ZodSchema>({
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [key, setKey] = useState<number>(0)
   const triggerRerender = () => setKey(prev => prev + 1)
+
+  const router = usePRouter()
 
   const methods = useForm<z.infer<T>>({
     resolver: formSchema && zodResolver(formSchema),
@@ -180,6 +184,8 @@ export default function BaseForm<T extends ZodSchema>({
     [children, isLoading]
   )
 
+  const currentPath = usePathname()
+
   return (
     <FormProvider {...methods} key={key}>
       <Box className='flex flex-col gap-5' id='form-container'>
@@ -196,7 +202,9 @@ export default function BaseForm<T extends ZodSchema>({
           buttonSubmit={buttonSubmit}
           hideButtonCancel={hideButtonCancel}
           isLoading={isLoading}
-          onClickButtonCancel={() => alert('kembali')}
+          onClickButtonCancel={() => {
+            router.push(currentPath.split('/').slice(0, -1).join('/'))
+          }}
         />
       </Box>
     </FormProvider>

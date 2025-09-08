@@ -230,9 +230,9 @@ export default function ModalForm<T extends ZodSchema>({
 
   const renderChildren = useCallback(
     ({ onSubmit, onReset, methods }: CustomButtonSubmitParamTypes<T>) => {
-      return typeof children === 'function' ? children({ onSubmit, onReset, methods }) : children
+      return typeof children === 'function' ? children({ onSubmit, onReset, methods, isLoading }) : children
     },
-    [children]
+    [children, isLoading]
   )
 
   const onCloseModal = () => {

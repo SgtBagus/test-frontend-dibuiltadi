@@ -6,10 +6,12 @@ import { useState, useEffect } from 'react'
 
 export default function InputFilter({
   fieldKey = 'search',
-  placeholder = 'Cari...'
+  placeholder = 'Cari...',
+  disabled
 }: {
   fieldKey?: string
   placeholder?: string
+  disabled?: boolean
 }) {
   const {
     tabelFilter: { filter },
@@ -38,6 +40,9 @@ export default function InputFilter({
       value={localValue}
       onChange={({ target: { value } }) => setLocalValue(value)}
       placeholder={placeholder}
+      size='small'
+      fullWidth
+      disabled={disabled}
     />
   )
 }

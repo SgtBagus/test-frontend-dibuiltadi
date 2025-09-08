@@ -17,12 +17,6 @@ type PageContainerProps = {
   title: string
   breadcrumbs?: BreadcrumbsItem[]
   additionalRightComponent?: ReactNode
-  addButtonProps?: {
-    title: string
-    href?: string
-    onClick?: () => void
-    className?: string
-  }
   createdAt?: string
   updatedAt?: string
   activeMenuKey?: MenuKeyAdminListType
@@ -33,7 +27,6 @@ export default function PageContainer({
   children,
   title,
   breadcrumbs,
-  addButtonProps,
   additionalRightComponent,
   activeMenuKey,
   AfterTitleComponent
@@ -73,7 +66,7 @@ export default function PageContainer({
           </Breadcrumbs>
         </div>
 
-        {(additionalRightComponent || addButtonProps) && (
+        {additionalRightComponent && (
           <div className='flex flex-col-reverse gap-1 max-md:mt-2 sm:flex-row sm:gap-1 md:ml-auto'>
             {additionalRightComponent}
           </div>
