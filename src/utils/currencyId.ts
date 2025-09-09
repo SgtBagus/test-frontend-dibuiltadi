@@ -8,3 +8,13 @@ export const currencyId = (value: string | number): string => {
     minimumFractionDigits: 0
   }).format(number)
 }
+
+export const currencyCompactId = (value: string | number): string => {
+  const number = typeof value === 'string' ? parseFloat(value) : value
+
+  return `Rp ${new Intl.NumberFormat('id-ID', {
+    notation: 'compact',
+    compactDisplay: 'short',
+    maximumFractionDigits: 0
+  }).format(number)}`
+}
