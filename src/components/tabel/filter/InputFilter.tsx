@@ -3,46 +3,52 @@
 import { TextField } from '@mui/material'
 import { useTabelContext } from '../context/tabelContext'
 import { useState, useEffect } from 'react'
+import LabelWrapper from '@/components/wrapper/LabelWrapper'
 
 export default function InputFilter({
-  fieldKey = 'search',
-  placeholder = 'Cari...',
+  filterKey = 'search',
+  placeholder,
+  label = 'Cari',
   disabled
 }: {
-  fieldKey?: string
+  filterKey?: string
   placeholder?: string
+  label?: string
   disabled?: boolean
 }) {
   const {
     tabelFilter: { filter },
-    setFilter
+    setFilter,
+    isLoading
   } = useTabelContext()
 
   // local state untuk input
-  const [localValue, setLocalValue] = useState(filter[fieldKey] || '')
+  const [localValue, setLocalValue] = useState(filter[filterKey] || '')
 
   // sinkronisasi kalau filter berubah dari luar
   useEffect(() => {
-    setLocalValue(filter[fieldKey] || '')
-  }, [filter, fieldKey])
+    setLocalValue(filter[filterKey] || '')
+  }, [filter, filterKey])
 
   // debounce update ke context
   useEffect(() => {
     const handler = setTimeout(() => {
-      setFilter(prev => ({ ...prev, [fieldKey]: localValue }))
+      setFilter(prev => ({ ...prev, [filterKey]: localValue }))
     }, 1000) // 500ms debounce
 
     return () => clearTimeout(handler)
-  }, [localValue, fieldKey, setFilter])
+  }, [localValue, filterKey, setFilter])
 
   return (
-    <TextField
-      value={localValue}
-      onChange={({ target: { value } }) => setLocalValue(value)}
-      placeholder={placeholder}
-      size='small'
-      fullWidth
-      disabled={disabled}
-    />
+    <LabelWrapper label={label}>
+      <TextField
+        value={localValue}
+        onChange={({ target: { value } }) => setLocalValue(value)}
+        placeholder={placeholder}
+        size='small'
+        fullWidth
+        disabled={disabled || isLoading}
+      />
+    </LabelWrapper>
   )
 }

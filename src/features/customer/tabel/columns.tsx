@@ -2,7 +2,7 @@ import { TableColumns } from '@/components/tabel'
 import { useModalContext } from '@/context/toggleModalContext'
 import { CustomerListType } from '@/types/customerType'
 import { Chip, IconButton, Tooltip } from '@mui/material'
-import { modalNameCustomer } from './form/ModalCustomerForm'
+import { modalNameCustomer } from '../form/ModalCustomerForm'
 
 const companyTypeEnum = {
   COMPANY: 'company',

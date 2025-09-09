@@ -1,6 +1,6 @@
 'use client'
 
-import { CSSProperties, ReactNode, useEffect, useMemo } from 'react'
+import { CSSProperties, ReactNode, useEffect, useMemo, useRef } from 'react'
 
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
@@ -26,9 +26,10 @@ export interface ColumnConfig<T, K extends keyof T = keyof T> {
   sortable?: boolean
 }
 
-type BaseTableProps<T> = {
+export type TableProps<T> = {
   columns: ColumnConfig<T>[]
   rowsPerPageOptions?: number[]
+  isServerPagination?: boolean
 }
 
 export const useRefetch = () => {
@@ -39,24 +40,38 @@ export const useRefetch = () => {
 
 export const modalNameConfirmation = 'confimation-delete'
 
-export default function Tabel<T>({ columns, rowsPerPageOptions = [5, 10, 50, 100] }: BaseTableProps<T>) {
+export default function Tabel<T>({
+  columns,
+  rowsPerPageOptions = [5, 10, 50, 100],
+  isServerPagination
+}: TableProps<T>) {
   const {
     count,
     data: dataTabel,
     isLoading,
-    tabelFilter: {
-      filter,
-      metaFilter: { page, perPage, sortBy, sortDirection }
-    },
+    tabelFilter: { filter, metaFilter },
     getData,
     setMetaFilter
   } = useTabelContext()
 
-  useEffect(() => {
-    getData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, perPage, sortBy, sortDirection, filter])
+  const prevDepsRef = useRef({ metaFilter, filter })
 
+  useEffect(() => {
+    const prevDeps = prevDepsRef.current
+    const currentDeps = { metaFilter, filter }
+
+    // cek apakah ada perubahan
+    const isChanged = JSON.stringify(prevDeps) !== JSON.stringify(currentDeps)
+
+    if (isChanged) {
+      getData()
+      prevDepsRef.current = currentDeps
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [metaFilter, filter])
+
+  const { page, perPage, sortBy, sortDirection } = metaFilter
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
@@ -90,6 +105,8 @@ export default function Tabel<T>({ columns, rowsPerPageOptions = [5, 10, 50, 100
   }, [page, perPage, sortedData])
 
   const skeletonRows = Array.from({ length: perPage }, () => ({}))
+
+  const dataRender = isServerPagination ? dataTabel : paginatedData
 
   return (
     <>
@@ -132,46 +149,63 @@ export default function Tabel<T>({ columns, rowsPerPageOptions = [5, 10, 50, 100
             </TableHead>
 
             <TableBody>
-              {isLoading
-                ? skeletonRows.map((_, idx) => (
-                    <TableRow key={idx}>
-                      {columns.map((_, colIndex) => {
-                        return (
-                          <TableCell key={colIndex}>
-                            <Skeleton />
-                          </TableCell>
-                        )
-                      })}
+              {isLoading ? (
+                skeletonRows.map((_, idx) => (
+                  <TableRow key={idx}>
+                    {columns.map((_, colIndex) => {
+                      return (
+                        <TableCell key={colIndex}>
+                          <Skeleton />
+                        </TableCell>
+                      )
+                    })}
+                  </TableRow>
+                ))
+              ) : (
+                <>
+                  {dataRender.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.filter(col => col.visible !== false).length}
+                        className='py-4 text-center'
+                      >
+                        Data tidak ditemukan
+                      </TableCell>
                     </TableRow>
-                  ))
-                : paginatedData.map((row, rowIndex) => (
-                    <TableRow key={rowIndex}>
-                      {columns
-                        .filter(col => col.visible !== false)
-                        .map((col, colIndex) => {
-                          const value = row[col.accessor]
-                          return (
-                            <TableCell
-                              key={colIndex}
-                              style={{
-                                whiteSpace: 'nowrap',
-                                position: col.sticky ? 'sticky' : 'static',
-                                left: col.sticky === 'left' ? 0 : undefined,
-                                right: col.sticky === 'right' ? 0 : undefined,
-                                zIndex: col.sticky ? 1 : undefined,
-                                textAlign: col.align ?? 'left',
-                                background: theme.palette.background.paper,
-                                ...col.style
-                              }}
-                              className={col.className}
-                              title={col.tooltip ? col.tooltip(value, row) : undefined}
-                            >
-                              {isLoading ? <Skeleton /> : col.cell ? col.cell(value, row) : (value as ReactNode)}
-                            </TableCell>
-                          )
-                        })}
-                    </TableRow>
-                  ))}
+                  ) : (
+                    <>
+                      {dataRender.map((row, rowIndex) => (
+                        <TableRow key={rowIndex}>
+                          {columns
+                            .filter(col => col.visible !== false)
+                            .map((col, colIndex) => {
+                              const value = row[col.accessor]
+                              return (
+                                <TableCell
+                                  key={colIndex}
+                                  style={{
+                                    whiteSpace: 'nowrap',
+                                    position: col.sticky ? 'sticky' : 'static',
+                                    left: col.sticky === 'left' ? 0 : undefined,
+                                    right: col.sticky === 'right' ? 0 : undefined,
+                                    zIndex: col.sticky ? 1 : undefined,
+                                    textAlign: col.align ?? 'left',
+                                    background: theme.palette.background.paper,
+                                    ...col.style
+                                  }}
+                                  className={col.className}
+                                  title={col.tooltip ? col.tooltip(value, row) : undefined}
+                                >
+                                  {isLoading ? <Skeleton /> : col.cell ? col.cell(value, row) : (value as ReactNode)}
+                                </TableCell>
+                              )
+                            })}
+                        </TableRow>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
             </TableBody>
           </Table>
         </div>

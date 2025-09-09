@@ -3,15 +3,17 @@ import Datepicker, { StyledReactDatePicker } from '@/components/datepicker'
 import { MenuList, MenuItem, TextField, type MenuItemProps } from '@mui/material'
 import { cn } from '@/utils/cn'
 import { Dayjs } from 'dayjs'
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTabelContext } from '../context/tabelContext'
 import { appDayJs } from '@/utils/appDayJs'
+import LabelWrapper from '@/components/wrapper/LabelWrapper'
 
 type InputDateRangeFilterProps = {
   placeholder?: string
   className?: string
-  label?: ReactNode
+  label?: string
   disabled?: boolean
+  disabledClearButton?: boolean
 }
 
 type PresetValue =
@@ -28,12 +30,14 @@ export default function InputDateRangeFilter({
   placeholder = 'Pencarian Tanggal..',
   className,
   label,
-  disabled
+  disabled,
+  disabledClearButton
 }: InputDateRangeFilterProps) {
   // Filter Context
   const {
     tabelFilter: { filter },
-    setFilter
+    setFilter,
+    isLoading
   } = useTabelContext()
 
   const initialStartDate = filter['dateRange']?.split(',')[0] ? new Date(filter['dateRange'].split(',')[0]) : null
@@ -136,136 +140,137 @@ export default function InputDateRangeFilter({
   }
 
   return (
-    <Datepicker
-      placeholderText={placeholder}
-      startDate={startDate}
-      endDate={endDate}
-      name='filter-date-range'
-      monthsShown={2}
-      isClearable
-      selectsRange
-      disabled={disabled}
-      onChange={date => {
-        if (date.find(d => d)) {
-          setStartDate(date[0])
-          setEndDate(date[1])
-          if (date[1] && startDate) {
-            setFilter({
-              ...filter,
-              dateRange: dateRangeValue(startDate, date[1])
-            })
+    <LabelWrapper label={label || ''}>
+      <Datepicker
+        placeholderText={placeholder}
+        startDate={startDate}
+        endDate={endDate}
+        name='filter-date-range'
+        monthsShown={2}
+        isClearable={!disabledClearButton}
+        selectsRange
+        disabled={disabled || isLoading}
+        onChange={date => {
+          if (date.find(d => d)) {
+            setStartDate(date[0])
+            setEndDate(date[1])
+            if (date[1] && startDate) {
+              setFilter({
+                ...filter,
+                dateRange: dateRangeValue(startDate, date[1])
+              })
+            }
+          } else {
+            setFilter(prev => ({ ...prev, dateRange: '' }))
           }
-        } else {
-          setFilter(prev => ({ ...prev, dateRange: '' }))
-        }
-      }}
-      open={openCalendar}
-      onFocus={() => setOpenCalendar(true)}
-      onCalendarOpen={() => setOpenCalendar(true)}
-      onCalendarClose={() => {
-        if (!startDate || !endDate) {
-          setStartDate(null)
-          setEndDate(null)
-          setFilter(prev => ({ ...prev, dateRange: '' }))
-        }
-        setOpenCalendar(false)
-      }}
-      portalId='mui-popover'
-      popperClassName='z-[1400]'
-      popperContainer={({ children }) => (
-        <StyledReactDatePicker>
-          <section>{children}</section>
-        </StyledReactDatePicker>
-      )}
-      calendarContainer={({ children, className }) => (
-        <section className={cn('flex overflow-hidden', className)}>
-          {/** Preset Button Group */}
-          <div className='flex w-28 flex-col gap-1 border-r px-[2px] py-3 sm:w-40 sm:px-2'>
-            <MenuList dense>
-              <StyledMenuItem
-                onClick={() => {
-                  setStartDate(null)
-                  setEndDate(null)
-                }}
-                selected={presetActive === 'custom'}
-              >
-                Custom
-              </StyledMenuItem>
-              <StyledMenuItem onClick={() => setPreset(new Date(), new Date())} selected={presetActive === 'today'}>
-                Hari ini
-              </StyledMenuItem>
-              <StyledMenuItem
-                onClick={() => {
-                  setPreset(dayjs().subtract(1, 'day').toDate(), dayjs().subtract(1, 'day').toDate())
-                }}
-                selected={presetActive === 'yesterday'}
-              >
-                Kemarin
-              </StyledMenuItem>
-              <StyledMenuItem
-                onClick={() => {
-                  setPreset(dayjs().startOf('isoWeek').toDate(), dayjs().endOf('isoWeek').toDate())
-                }}
-                selected={presetActive === 'this-week'}
-              >
-                Minggu ini
-              </StyledMenuItem>
+        }}
+        open={openCalendar}
+        onFocus={() => setOpenCalendar(true)}
+        onCalendarOpen={() => setOpenCalendar(true)}
+        onCalendarClose={() => {
+          if (!startDate || !endDate) {
+            setStartDate(null)
+            setEndDate(null)
+            setFilter(prev => ({ ...prev, dateRange: '' }))
+          }
+          setOpenCalendar(false)
+        }}
+        portalId='mui-popover'
+        popperClassName='z-[1400]'
+        popperContainer={({ children }) => (
+          <StyledReactDatePicker>
+            <section>{children}</section>
+          </StyledReactDatePicker>
+        )}
+        calendarContainer={({ children, className }) => (
+          <section className={cn('flex overflow-hidden', className)}>
+            {/** Preset Button Group */}
+            <div className='flex w-28 flex-col gap-1 border-r px-[2px] py-3 sm:w-40 sm:px-2'>
+              <MenuList dense>
+                <StyledMenuItem
+                  onClick={() => {
+                    setStartDate(null)
+                    setEndDate(null)
+                  }}
+                  selected={presetActive === 'custom'}
+                >
+                  Custom
+                </StyledMenuItem>
+                <StyledMenuItem onClick={() => setPreset(new Date(), new Date())} selected={presetActive === 'today'}>
+                  Hari ini
+                </StyledMenuItem>
+                <StyledMenuItem
+                  onClick={() => {
+                    setPreset(dayjs().subtract(1, 'day').toDate(), dayjs().subtract(1, 'day').toDate())
+                  }}
+                  selected={presetActive === 'yesterday'}
+                >
+                  Kemarin
+                </StyledMenuItem>
+                <StyledMenuItem
+                  onClick={() => {
+                    setPreset(dayjs().startOf('isoWeek').toDate(), dayjs().endOf('isoWeek').toDate())
+                  }}
+                  selected={presetActive === 'this-week'}
+                >
+                  Minggu ini
+                </StyledMenuItem>
 
-              <StyledMenuItem
-                onClick={() => {
-                  setPreset(dayjs().startOf('month').toDate(), dayjs().endOf('month').toDate())
-                }}
-                selected={presetActive === 'this-month'}
-              >
-                Bulan ini
-              </StyledMenuItem>
-              <StyledMenuItem
-                onClick={() => {
-                  setPreset(
-                    dayjs().subtract(1, 'month').startOf('month').toDate(),
-                    dayjs().subtract(1, 'month').endOf('month').toDate()
-                  )
-                }}
-                selected={presetActive === 'last-month'}
-              >
-                Bulan Kemarin
-              </StyledMenuItem>
-              <StyledMenuItem
-                onClick={() => {
-                  setPreset(dayjs().subtract(6, 'day').toDate(), new Date())
-                }}
-                selected={presetActive === 'last-7-days'}
-              >
-                7 Hari terakhir
-              </StyledMenuItem>
-              <StyledMenuItem
-                onClick={() => {
-                  setPreset(dayjs().subtract(29, 'day').toDate(), new Date())
-                }}
-                selected={presetActive === 'last-30-days'}
-              >
-                30 Hari Terakhir
-              </StyledMenuItem>
-            </MenuList>
-          </div>
+                <StyledMenuItem
+                  onClick={() => {
+                    setPreset(dayjs().startOf('month').toDate(), dayjs().endOf('month').toDate())
+                  }}
+                  selected={presetActive === 'this-month'}
+                >
+                  Bulan ini
+                </StyledMenuItem>
+                <StyledMenuItem
+                  onClick={() => {
+                    setPreset(
+                      dayjs().subtract(1, 'month').startOf('month').toDate(),
+                      dayjs().subtract(1, 'month').endOf('month').toDate()
+                    )
+                  }}
+                  selected={presetActive === 'last-month'}
+                >
+                  Bulan Kemarin
+                </StyledMenuItem>
+                <StyledMenuItem
+                  onClick={() => {
+                    setPreset(dayjs().subtract(6, 'day').toDate(), new Date())
+                  }}
+                  selected={presetActive === 'last-7-days'}
+                >
+                  7 Hari terakhir
+                </StyledMenuItem>
+                <StyledMenuItem
+                  onClick={() => {
+                    setPreset(dayjs().subtract(29, 'day').toDate(), new Date())
+                  }}
+                  selected={presetActive === 'last-30-days'}
+                >
+                  30 Hari Terakhir
+                </StyledMenuItem>
+              </MenuList>
+            </div>
 
-          {/** Calendar */}
-          <div className='relative flex flex-col justify-center sm:flex-row'>{children}</div>
-        </section>
-      )}
-      customInput={
-        <TextField
-          label={label}
-          placeholder={placeholder}
-          fullWidth
-          size='small'
-          InputProps={{
-            endAdornment: <i className={`ri-calendar-line mr-[1.5px] ${(startDate || endDate) && 'hidden'}`} />
-          }}
-        />
-      }
-      className={className}
-    />
+            {/** Calendar */}
+            <div className='relative flex flex-col justify-center sm:flex-row'>{children}</div>
+          </section>
+        )}
+        customInput={
+          <TextField
+            placeholder={placeholder}
+            fullWidth
+            size='small'
+            InputProps={{
+              endAdornment: <i className={`ri-calendar-line mr-[1.5px] ${(startDate || endDate) && 'hidden'}`} />
+            }}
+          />
+        }
+        className={className}
+      />
+    </LabelWrapper>
   )
 }
 

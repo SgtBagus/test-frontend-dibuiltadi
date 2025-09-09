@@ -62,7 +62,15 @@ const FormInputSelect = ({
             }}
             MenuProps={{
               PaperProps: {
-                style: { maxHeight: 288 } // max-h-72
+                sx: {
+                  maxHeight: 288,
+                  overflowX: 'auto'
+                }
+              },
+              MenuListProps: {
+                sx: {
+                  paddingTop: 0
+                }
               }
             }}
             {...props}

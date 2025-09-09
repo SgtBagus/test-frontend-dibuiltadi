@@ -1,15 +1,16 @@
 'use client'
 
-import Tabel, { ColumnConfig } from './tabel/tabel'
+import Tabel, { ColumnConfig, TableProps } from './tabel/tabel'
 import { ReactNode } from 'react'
 import { Card, CardContent, CardHeader, Stack } from '@mui/material'
 
-type BaseTableProps<T> = {
-  columns: ColumnConfig<T>[]
+export default function BaseTable<T>({
+  filter,
+  columns,
+  isServerPagination
+}: {
   filter?: ReactNode
-}
-
-export default function BaseTable<T>({ filter, columns }: BaseTableProps<T>) {
+} & TableProps<T>) {
   return (
     <Stack gap={2}>
       {filter && (
@@ -18,7 +19,7 @@ export default function BaseTable<T>({ filter, columns }: BaseTableProps<T>) {
           <CardContent>{filter}</CardContent>
         </Card>
       )}
-      <Tabel columns={columns} />
+      <Tabel columns={columns} isServerPagination={isServerPagination} />
     </Stack>
   )
 }

@@ -79,12 +79,17 @@ export const TabelProvider = ({
           ...(metaFilter.sortBy !== null && {
             sortDirection: metaFilter.sortBy
           }),
-          ...cleanedFilter,
-          ...params
+          ...params,
+          ...cleanedFilter
         }
       })
+
       setData(res.items)
-      setCount((res.items as []).length) // pastikan API balikin total rows
+      if (res.currentPage && res.lastPage && res.perPage && res.total) {
+        setCount(res.total)
+      } else {
+        setCount((res.items as []).length)
+      }
     } catch (error) {
       toast.error(getErrorMessage(error))
     } finally {

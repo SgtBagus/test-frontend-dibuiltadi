@@ -1,10 +1,11 @@
-import { FormControl, InputLabel, MenuItem, Select, Skeleton } from '@mui/material'
+import { MenuItem, Select, Skeleton } from '@mui/material'
 
 import { useEffect, useState } from 'react'
 import { useTabelContext } from '../context/tabelContext'
 import { apiFetch } from '@/api/apiFetch'
 import toast from '@/helper/toast'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import LabelWrapper from '@/components/wrapper/LabelWrapper'
 
 type values = { code: string; name: string }
 
@@ -21,7 +22,8 @@ const InputSelectFilter = ({
 }) => {
   const {
     tabelFilter: { filter },
-    setFilter
+    setFilter,
+    isLoading: isLoadingPaginated
   } = useTabelContext()
 
   const [value, setValue] = useState<string | string[] | null>(null)
@@ -55,16 +57,14 @@ const InputSelectFilter = ({
   }, [isOpen])
 
   return (
-    <FormControl fullWidth>
-      <InputLabel size='small'>{label}</InputLabel>
+    <LabelWrapper label={label}>
       <Select
         size='small'
-        disabled={disabled}
+        disabled={disabled || isLoadingPaginated}
         onOpen={() => setIsOpen(true)}
         onClose={() => setIsOpen(false)}
-        key={filterKey}
-        value={value || ''}
-        label={label}
+        fullWidth
+        value={value ?? ''}
         onChange={({ target: { value } }) => {
           setValue(value)
           setFilter({ ...filter, [filterKey]: value })
@@ -75,6 +75,7 @@ const InputSelectFilter = ({
         MenuProps={{
           PaperProps: {
             sx: {
+              maxHeight: 288,
               overflowX: 'auto'
             }
           },
@@ -102,23 +103,21 @@ const InputSelectFilter = ({
           )
         }
       >
-        <div className='max-h-72'>
-          {isLoading ? (
-            <MenuItem disabled aria-label='loading'>
-              <Skeleton width='100%' />
-            </MenuItem>
-          ) : (
-            data.map(({ code, name }, idx) => {
-              return (
-                <MenuItem key={idx} value={code}>
-                  {name}
-                </MenuItem>
-              )
-            })
-          )}
-        </div>
+        {isLoading ? (
+          <MenuItem disabled aria-label='loading'>
+            <Skeleton width='100%' />
+          </MenuItem>
+        ) : (
+          data.map(({ code, name }, idx) => {
+            return (
+              <MenuItem key={idx} value={code}>
+                {name}
+              </MenuItem>
+            )
+          })
+        )}
       </Select>
-    </FormControl>
+    </LabelWrapper>
   )
 }
 
