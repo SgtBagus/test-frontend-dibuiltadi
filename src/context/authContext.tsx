@@ -43,8 +43,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       })
       setUser(data)
     } catch (err) {
-      toast.error('Terjadi Kesalahan!')
-      setUser(null)
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as any).response?.status === 'number' &&
+        (err as any).response.status === 401 &&
+        (err as any).response.status === 500
+      ) {
+        logout()
+      } else {
+        toast.error('Terjadi Kesalahan!')
+        setUser(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -71,6 +82,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (token) {
       fetchProfile()
     }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   return (

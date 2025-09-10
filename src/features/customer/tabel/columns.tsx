@@ -4,7 +4,7 @@ import { CustomerListType } from '@/types/customerType'
 import { Chip, IconButton, Tooltip } from '@mui/material'
 import { modalNameCustomer } from '../form/ModalCustomerForm'
 
-const companyTypeEnum = {
+export const companyTypeEnum = {
   COMPANY: 'company',
   PERSON: 'person'
 }

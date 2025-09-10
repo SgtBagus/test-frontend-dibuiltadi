@@ -80,11 +80,23 @@ const FormInputSelect = ({
                 <Skeleton width='100%' />
               </MenuItem>
             ) : (
-              data.map(({ code, name }, idx) => (
-                <MenuItem key={idx} value={code}>
-                  {name}
-                </MenuItem>
-              ))
+              <>
+                {data.length === 0 ? (
+                  <MenuItem disabled aria-label='empty'>
+                    Tidak ada data
+                  </MenuItem>
+                ) : (
+                  <>
+                    {data.map(({ code, name }, idx) => {
+                      return (
+                        <MenuItem key={idx} value={code}>
+                          {name}
+                        </MenuItem>
+                      )
+                    })}
+                  </>
+                )}
+              </>
             )}
           </Select>
 
